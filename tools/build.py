@@ -15,6 +15,61 @@ LEVELS = ["a1", "a2", "b1", "b2", "c1"]
 SITE_URL = "https://german-trainer-platform.onrender.com/grammatik/"
 ESSAY_TUTOR_URL = "https://my-essay-tutor.onrender.com/ui/"  # live on Render
 
+HEADER = """    <header class="site-header">
+        <div class="container">
+            <a class="brand" href="index.html">
+                <span class="brand-mark" aria-hidden="true">G</span>
+                <span class="brand-text">DeutschGrammatikMeister<small>Grammatik · A1–C1</small></span>
+            </a>
+            <nav class="site-nav" aria-label="Hauptnavigation">
+                <ul>
+                    <li><a href="index.html">Startseite</a></li>
+{levels}
+                </ul>
+            </nav>
+        </div>
+    </header>"""
+
+FOOTER = """    <footer class="site-footer">
+        <div class="container">
+            <div class="cols">
+                <div>
+                    <a class="brand" href="index.html">
+                        <span class="brand-mark" aria-hidden="true">G</span>
+                        <span class="brand-text">DeutschGrammatikMeister<small>Grammatik · A1–C1</small></span>
+                    </a>
+                    <p>Visuelle Grammatik-Referenz für Deutschlernende — 58 Regeln mit Erklärung, Beispielen und Übungen samt Lösung.</p>
+                </div>
+                <div>
+                    <h4>Niveaustufen</h4>
+                    <ul>
+{level_links}
+                    </ul>
+                </div>
+                <div>
+                    <h4>Projekt</h4>
+                    <ul>
+                        <li><a href="{essay}">Essay Tutor</a></li>
+                        <li><a href="index.html#glossar">Glossar</a></li>
+                        <li><a href="index.html#ressourcen">Ressourcen</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="bottom">
+                <span>© DeutschGrammatikMeister · <a href="index.html">Startseite</a></span>
+                <span>58 Regeln · A1 bis C1</span>
+            </div>
+        </div>
+    </footer>"""
+
+LEVEL_TITLES = {
+    "a1": "A1 — Erste Schritte",
+    "a2": "A2 — Alltag &amp; Vergangenheit",
+    "b1": "B1 — Selbstständig kommunizieren",
+    "b2": "B2 — Differenziert und genau",
+    "c1": "C1 — Souverän und stilsicher",
+}
+
 
 def md(text: str) -> str:
     """Escape, then allow **bold** and *italic* only."""
@@ -23,22 +78,41 @@ def md(text: str) -> str:
     return re.sub(r"\*(.+?)\*", r"<em>\1</em>", t)
 
 
-def rule_html(r: dict) -> str:
-    ex = "".join(f"<li>{md(e)}</li>" for e in r["examples"])
-    paras = "".join(f"<p>{md(p)}</p>" for p in r["explain"])
+def rule_html(r: dict, n: int) -> str:
+    ex = "".join(f"<li>{md(e)}</li>\n" for e in r["examples"])
+    paras = "".join(f"<p>{md(p)}</p>\n" for p in r["explain"])
     rows = "".join(
         f'<li><span class="q">{md(e["q"])}</span> <details><summary>Lösung</summary>'
-        f'<span class="a">{md(e["a"])}</span></details></li>' for e in r["exercises"])
-    return (f'<article class="rule" id="{r["id"]}">\n<h3 id="h-{r["id"]}">{md(r["title"])}</h3>\n{paras}\n'
-            f'<p class="label">Beispiele</p><ul class="examples">{ex}</ul>\n'
-            f'<p class="label">Übung</p><ol class="exercises">{rows}</ol>\n'
-            f'<p class="ruleid">Regel-ID: <code>{r["id"]}</code></p>\n</article>')
+        f'<span class="a">{md(e["a"])}</span></details></li>\n' for e in r["exercises"])
+    return (
+        f'<article class="rule" id="{r["id"]}">\n'
+        f'<h3>{md(r["title"])}</h3>\n'
+        f'{paras}'
+        f'<p class="label">Beispiele</p>\n<ul class="examples">{ex}</ul>\n'
+        f'<p class="label">Übung · {len(r["exercises"])} Aufgabe'
+        f'{"n" if len(r["exercises"]) != 1 else ""}</p>\n<ol class="exercises">{rows}</ol>\n'
+        f'<p class="ruleid">Regel-ID <code>{r["id"]}</code> · Regel {n}</p>\n'
+        f'</article>'
+    )
 
 
-def page(data: dict, nav: str) -> str:
-    level = data["level"]
-    toc = "".join(f'<li><a href="#{r["id"]}">{md(r["title"])}</a></li>' for r in data["rules"])
-    body = "\n".join(rule_html(r) for r in data["rules"])
+def page(data: dict, current: str) -> str:
+    level = data["level"].upper()
+    rules = data["rules"]
+    n_rules = len(rules)
+
+    nav_levels = "\n".join(
+        f'                    <li><a href="{l}.html"{("", " aria-current=\"page\"")[l == current]}>{l.upper()}</a></li>'
+        for l in LEVELS)
+    header = HEADER.format(levels=nav_levels)
+
+    toc_rail = "\n".join(
+        f'                        <li><a href="#{r["id"]}">{md(r["title"])}</a></li>' for r in rules)
+    body = "\n".join(rule_html(r, i + 1) for i, r in enumerate(rules))
+    level_links = "\n".join(
+        f'                        <li><a href="{l}.html">{LEVEL_TITLES[l]}</a></li>' for l in LEVELS)
+    footer = FOOTER.format(level_links=level_links, essay=ESSAY_TUTOR_URL)
+
     return f'''<!DOCTYPE html>
 <html lang="de">
 <head>
@@ -49,28 +123,40 @@ def page(data: dict, nav: str) -> str:
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <div class="container">
-            <h1><a href="index.html" style="color:inherit;text-decoration:none">DeutschGrammatikMeister</a></h1>
-            <nav><ul>{nav}</ul></nav>
-        </div>
-    </header>
+{header}
+
     <main>
-        <section class="detail">
+        <section class="level-hero" data-level="{level}" style="--level: var(--{current})">
             <div class="container">
-                <h2 id="h-{level.lower()}">{html.escape(data["title"])}</h2>
+                <span class="chip">Niveaustufe {level}</span>
+                <h1>{html.escape(data["title"])}</h1>
                 <p>{html.escape(data["intro"])}</p>
-                <ul class="toc">{toc}</ul>
-                <p class="hint">Schreibst du Texte? Lass sie im <a href="{ESSAY_TUTOR_URL}">Essay Tutor</a> prüfen. Bei jedem Fehler verweist er auf die passende Regel hier.</p>
+                <div class="meta">
+                    <span>{n_rules} Regeln</span>
+                    <span>Übungen mit Lösung</span>
+                    <span>A1 → C1</span>
+                </div>
             </div>
         </section>
-        <section class="detail rules">
-            <div class="container">
+
+        <div class="container">
+            <div class="level-layout" style="--level: var(--{current}); --level-soft: color-mix(in srgb, var(--{current}) 12%, #fff)">
+                <aside class="toc-rail" data-pagefind-ignore>
+                    <div class="rail-title">Inhalt · {n_rules} Regeln</div>
+                    <ol>
+{toc_rail}
+                    </ol>
+                </aside>
+                <div class="rules">
 {body}
+                    <p class="hint info" style="margin-top:6px">Schreibst du Texte? Lass sie im <a href="{ESSAY_TUTOR_URL}">Essay Tutor</a> prüfen. Bei jedem Fehler verweist er auf die passende Regel hier.</p>
+                    <a class="level-back" href="index.html">← Zurück zur Startseite</a>
+                </div>
             </div>
-        </section>
+        </div>
     </main>
-    <footer><div class="container"><p>&copy; DeutschGrammatikMeister · <a href="index.html" style="color:#fff">Startseite</a></p></div></footer>
+
+{footer}
 </body>
 </html>
 '''
@@ -80,10 +166,9 @@ def main() -> None:
     data = {l: json.loads((ROOT / "regeln" / f"{l}.json").read_text(encoding="utf-8")) for l in LEVELS}
     ids = [r["id"] for d in data.values() for r in d["rules"]]
     assert len(ids) == len(set(ids)), "duplicate rule id"
-    nav = "".join(f'<li><a href="{l}.html">{l.upper()}</a></li>' for l in LEVELS)
     catalog = []
     for l, d in data.items():
-        (ROOT / f"{l}.html").write_text(page(d, nav), encoding="utf-8")
+        (ROOT / f"{l}.html").write_text(page(d, l), encoding="utf-8")
         for r in d["rules"]:
             catalog.append({"id": r["id"], "level": d["level"], "title": r["title"], "url": f"{l}.html#{r['id']}"})
     (ROOT / "regeln.json").write_text(
