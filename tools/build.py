@@ -12,8 +12,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 LEVELS = ["a1", "a2", "b1", "b2", "c1"]
-SITE_URL = "https://kutlu24.github.io/deutsch-grammatik-meister/"
-ESSAY_TUTOR_URL = "https://my-essay-tutor.onrender.com/"  # change if the Essay Tutor lives elsewhere
+SITE_URL = "https://german-trainer-platform.onrender.com/grammatik/"
+ESSAY_TUTOR_URL = "https://my-essay-tutor.onrender.com/ui/"  # live on Render
 
 
 def md(text: str) -> str:
