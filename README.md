@@ -28,3 +28,7 @@ npx serve .
 ## Notes
 
 The original source was a single landing page with three teaser cards, all linking to `#` — no actual grammar content behind them, and all nav links dead. Real grammar reference sections (with declension/conjugation tables), a glossary, and a resources section were written before publishing. An unused 3.2 MB photo of a German textbook page (copyrighted material, not referenced anywhere in the code) was excluded.
+
+## Search
+
+The search box uses [Pagefind](https://pagefind.app) (static index, no server). After editing `index.html` run `npx pagefind --site . --glob "*.html"` and commit the `pagefind/` folder.
