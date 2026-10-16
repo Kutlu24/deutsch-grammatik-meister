@@ -32,3 +32,7 @@ The original source was a single landing page with three teaser cards, all linki
 ## Search
 
 The search box uses [Pagefind](https://pagefind.app) (static index, no server). After editing `index.html` run `npx pagefind --site . --glob "*.html"` and commit the `pagefind/` folder.
+
+## Level pages (A1–C1)
+
+`regeln/a1.json … c1.json` hold 58 grammar rules (German explanations, examples, exercises with solutions). `python3 tools/build.py` generates `a1.html … c1.html` and `regeln.json` (rule catalog with stable ids that the Essay Tutor links to). Never rename a rule id; add new rules instead. Then rebuild the search index (see Search above). The explanations are AI-drafted and should be reviewed by a German teacher.
